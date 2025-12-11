@@ -1,0 +1,302 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskGPT - Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>📋 TaskGPT</h1>
+            </div>
+            <div class="nav-user">
+                <span id="username-display"></span>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <div class="dashboard-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Navigation</h3>
+                    <button class="sidebar-btn active" onclick="showSection('tasks')">
+                        ✓ My Tasks
+                    </button>
+                    <button class="sidebar-btn" onclick="showSection('groups')">
+                        👥 Groups
+                    </button>
+                    <button class="sidebar-btn" onclick="showSection('activity')">
+                        📊 Activity
+                    </button>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Quick Actions</h3>
+                    <button class="btn btn-primary btn-block" onclick="showCreateTask()">
+                        + New Task
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="showCreateGroup()">
+                        + New Group
+                    </button>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>Filter Tasks</h3>
+                    <select id="status-filter" class="filter-select" onchange="loadTasks()">
+                        <option value="">All Status</option>
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="done">Done</option>
+                    </select>
+                    
+                    <select id="priority-filter" class="filter-select" onchange="loadTasks()">
+                        <option value="">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                    
+                    <select id="group-filter" class="filter-select" onchange="loadTasks()">
+                        <option value="">All Groups</option>
+                    </select>
+                </div>
+            </aside>
+            
+            <!-- Main Area -->
+            <main class="main-content">
+                <!-- Dashboard Metrics Section -->
+                <section class="dashboard-metrics">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon">📋</div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="tasks-at-hand">0</div>
+                                <div class="metric-label">Tasks at Hand</div>
+                            </div>
+                        </div>
+                        <div class="metric-card alert">
+                            <div class="metric-icon">⚠️</div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="overdue-tasks">0</div>
+                                <div class="metric-label">Overdue Tasks</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="avg-age-days">0</div>
+                                <div class="metric-label">Avg Age (days)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card success">
+                            <div class="metric-icon">✅</div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="completion-speed">0</div>
+                                <div class="metric-label">Avg Completion (days)</div>
+                            </div>
+                        </div>
+                        <div class="metric-card pending">
+                            <div class="metric-icon">⏳</div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="pending-assignments">0</div>
+                                <div class="metric-label">Pending Assignments</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Tasks Section -->
+                <section id="tasks-section" class="content-section">
+                    <div class="section-header">
+                        <h2>My Tasks</h2>
+                        <div class="task-stats">
+                            <span class="stat">
+                                <span class="stat-label">To Do:</span>
+                                <span id="todo-count">0</span>
+                            </span>
+                            <span class="stat">
+                                <span class="stat-label">In Progress:</span>
+                                <span id="in-progress-count">0</span>
+                            </span>
+                            <span class="stat">
+                                <span class="stat-label">Done:</span>
+                                <span id="done-count">0</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div id="tasks-container" class="tasks-grid">
+                        <p class="loading">Loading tasks...</p>
+                    </div>
+                </section>
+                
+                <!-- Groups Section -->
+                <section id="groups-section" class="content-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>My Groups</h2>
+                    </div>
+                    
+                    <div id="groups-container" class="groups-grid">
+                        <p class="loading">Loading groups...</p>
+                    </div>
+                </section>
+                
+                <!-- Activity Section -->
+                <section id="activity-section" class="content-section" style="display: none;">
+                    <div class="section-header">
+                        <h2>Recent Activity</h2>
+                    </div>
+                    
+                    <div id="activity-container" class="activity-list">
+                        <p class="loading">Loading activity...</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    
+    <!-- Create Task Modal -->
+    <div id="create-task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Task</h2>
+                <span class="close" onclick="closeModal('create-task-modal')">&times;</span>
+            </div>
+            <form id="create-task-form">
+                <div class="form-group">
+                    <label for="task-title">Title *</label>
+                    <input type="text" id="task-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea id="task-description" rows="4"></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-status">Status</label>
+                        <select id="task-status">
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-due-date">Due Date</label>
+                        <input type="date" id="task-due-date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-category">Category</label>
+                        <input type="text" id="task-category" placeholder="e.g., Work, Personal">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-estimated-hours">Estimated Hours *</label>
+                        <input type="number" id="task-estimated-hours" min="0" step="0.5" required placeholder="e.g., 2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-estimated-minutes">Additional Minutes</label>
+                        <input type="number" id="task-estimated-minutes" min="0" max="59" value="0" placeholder="0-59">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-group">Group (Optional)</label>
+                    <select id="task-group">
+                        <option value="">Personal Task</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('create-task-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Group</h2>
+                <span class="close" onclick="closeModal('create-group-modal')">&times;</span>
+            </div>
+            <form id="create-group-form">
+                <div class="form-group">
+                    <label for="group-name">Group Name *</label>
+                    <input type="text" id="group-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="group-description">Description</label>
+                    <textarea id="group-description" rows="4"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('create-group-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Task Details Modal -->
+    <div id="task-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Task Details</h2>
+                <span class="close" onclick="closeModal('task-details-modal')">&times;</span>
+            </div>
+            <div id="task-details-content">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Group Details Modal -->
+    <div id="group-details-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Group Details</h2>
+                <span class="close" onclick="closeModal('group-details-modal')">&times;</span>
+            </div>
+            <div id="group-details-content">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+    
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>
