@@ -29,7 +29,7 @@ TaskGPT is a fully responsive, feature-rich task management application designed
 
 ## Technology Stack
 
-- **Backend**: Python Flask (REST API)
+- **Backend**: Python Django 5.0 (REST API)
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Database**: SQLite (easily upgradeable to PostgreSQL/MySQL)
 - **Styling**: Custom CSS with responsive design
@@ -74,12 +74,17 @@ TaskGPT is a fully responsive, feature-rich task management application designed
    export SECRET_KEY=your-secret-key-here
    ```
 
-5. **Run the application**
+5. **Run database migrations**
    ```bash
-   python backend/app.py
+   python manage.py migrate
    ```
 
-6. **Access the application**
+6. **Run the application**
+   ```bash
+   python manage.py runserver
+   ```
+
+7. **Access the application**
    Open your web browser and navigate to:
    ```
    http://localhost:5000
@@ -120,8 +125,15 @@ TaskGPT is a fully responsive, feature-rich task management application designed
 
 ```
 TaskGPT/
-├── backend/
-│   └── app.py              # Flask application and API endpoints
+├── taskgpt_project/
+│   ├── settings.py         # Django project settings
+│   ├── urls.py             # Main URL configuration
+│   └── wsgi.py             # WSGI configuration
+├── tasks/
+│   ├── models.py           # Database models
+│   ├── views.py            # API views and endpoints
+│   ├── urls.py             # App URL configuration
+│   └── admin.py            # Django admin configuration
 ├── frontend/
 │   ├── static/
 │   │   ├── css/
