@@ -19,6 +19,7 @@ async function init() {
         
         // Load initial data
         await Promise.all([
+            loadDashboardMetrics(),
             loadTasks(),
             loadGroups(),
             loadActivity()
@@ -59,6 +60,22 @@ function showSection(section) {
     
     // Add active class to clicked button
     event.target.classList.add('active');
+}
+
+// Load Dashboard Metrics
+async function loadDashboardMetrics() {
+    try {
+        const response = await fetch('/api/dashboard/metrics');
+        const metrics = await response.json();
+        
+        document.getElementById('tasks-at-hand').textContent = metrics.tasks_at_hand;
+        document.getElementById('overdue-tasks').textContent = metrics.overdue_tasks;
+        document.getElementById('avg-age-days').textContent = metrics.avg_age_days;
+        document.getElementById('completion-speed').textContent = metrics.avg_completion_days;
+        document.getElementById('pending-assignments').textContent = metrics.pending_assignments;
+    } catch (error) {
+        console.error('Error loading dashboard metrics:', error);
+    }
 }
 
 // Load Tasks
@@ -289,6 +306,14 @@ window.onclick = function(event) {
 document.getElementById('create-task-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    const estimatedHours = document.getElementById('task-estimated-hours').value;
+    const estimatedMinutes = document.getElementById('task-estimated-minutes').value || 0;
+    
+    if (!estimatedHours) {
+        showToast('Estimated hours is required', 'error');
+        return;
+    }
+    
     const taskData = {
         title: document.getElementById('task-title').value,
         description: document.getElementById('task-description').value,
@@ -296,6 +321,8 @@ document.getElementById('create-task-form').addEventListener('submit', async (e)
         priority: document.getElementById('task-priority').value,
         due_date: document.getElementById('task-due-date').value || null,
         category: document.getElementById('task-category').value,
+        estimated_hours: parseFloat(estimatedHours),
+        estimated_minutes: parseInt(estimatedMinutes),
         group_id: document.getElementById('task-group').value || null
     };
     
@@ -313,6 +340,7 @@ document.getElementById('create-task-form').addEventListener('submit', async (e)
             closeModal('create-task-modal');
             document.getElementById('create-task-form').reset();
             await loadTasks();
+            await loadDashboardMetrics();
             await loadActivity();
         } else {
             const data = await response.json();
