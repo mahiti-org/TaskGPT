@@ -3,7 +3,37 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 
-class Group(models.Model):
+class SoftDeleteManager(models.Manager):
+    """Manager that filters out soft-deleted objects"""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class SoftDeleteModel(models.Model):
+    """Abstract base model for soft delete functionality"""
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()  # Manager to access all objects including deleted
+    
+    class Meta:
+        abstract = True
+    
+    def soft_delete(self):
+        """Soft delete the object"""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+    
+    def restore(self):
+        """Restore a soft-deleted object"""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+
+
+class Group(SoftDeleteModel):
     """Team/Group model for collaboration"""
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -17,7 +47,7 @@ class Group(models.Model):
         ordering = ['-created_at']
 
 
-class GroupMember(models.Model):
+class GroupMember(SoftDeleteModel):
     """Group membership model"""
     ROLE_CHOICES = [
         ('admin', 'Admin'),
@@ -37,7 +67,7 @@ class GroupMember(models.Model):
         return f"{self.user.username} in {self.group.name}"
 
 
-class Task(models.Model):
+class Task(SoftDeleteModel):
     """Task model"""
     STATUS_CHOICES = [
         ('todo', 'To Do'),
@@ -101,7 +131,7 @@ class Task(models.Model):
         ordering = ['-created_at']
 
 
-class Comment(models.Model):
+class Comment(SoftDeleteModel):
     """Comment model for task discussions"""
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -115,7 +145,7 @@ class Comment(models.Model):
         ordering = ['-created_at']
 
 
-class ActivityLog(models.Model):
+class ActivityLog(SoftDeleteModel):
     """Activity log model"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True)
@@ -131,7 +161,7 @@ class ActivityLog(models.Model):
         ordering = ['-created_at']
 
 
-class UserInvitation(models.Model):
+class UserInvitation(SoftDeleteModel):
     """User invitation model for email-based registration"""
     email = models.EmailField(unique=True)
     invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invitations')
@@ -151,7 +181,7 @@ class UserInvitation(models.Model):
         ordering = ['-created_at']
 
 
-class TaskReassignment(models.Model):
+class TaskReassignment(SoftDeleteModel):
     """Track task reassignments"""
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='reassignments')
     from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reassignments_from')

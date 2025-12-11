@@ -421,19 +421,15 @@ def task_detail_api(request, task_id):
             return JsonResponse({'error': 'An error occurred while updating the task'}, status=500)
     
     elif request.method == 'DELETE':
-        # Store task info before deleting
-        task_title = task.title
-        task_id_ref = task.id
+        # Soft delete the task
+        task.soft_delete()
         
-        # Delete the task first
-        task.delete()
-        
-        # Log activity after deleting (without task reference)
+        # Log activity
         ActivityLog.objects.create(
             user=request.user,
-            task=None,
+            task=task,
             action='delete_task',
-            details=f'Task "{task_title}" (ID: {task_id_ref}) deleted'
+            details=f'Task "{task.title}" soft deleted'
         )
         
         return JsonResponse({'message': 'Task deleted'})
