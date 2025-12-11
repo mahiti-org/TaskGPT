@@ -87,7 +87,12 @@ TaskGPT is a fully responsive, feature-rich task management application designed
 7. **Access the application**
    Open your web browser and navigate to:
    ```
-   http://localhost:5000
+   http://localhost:8000
+   ```
+   
+   Note: To run on port 5000 (like the screenshots), use:
+   ```bash
+   python manage.py runserver 5000
    ```
 
 ## Usage Guide
@@ -209,11 +214,11 @@ Breakpoints:
 
 ## Security Features
 
-- Password hashing using Werkzeug security
-- Session-based authentication
-- CSRF protection through Flask sessions
-- SQL injection prevention with parameterized queries
-- XSS prevention through HTML escaping
+- Password hashing using Django's built-in authentication system
+- Session-based authentication with Django sessions
+- CSRF protection through Django's CSRF middleware
+- SQL injection prevention with Django ORM parameterized queries
+- XSS prevention through Django template auto-escaping
 
 ## Future Enhancements
 

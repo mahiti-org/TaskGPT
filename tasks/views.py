@@ -7,8 +7,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Q
 import json
+import logging
 
 from .models import Task, Group, GroupMember, Comment, ActivityLog
+
+# Get logger
+logger = logging.getLogger(__name__)
+
+# Note: @csrf_exempt is used for API endpoints to allow cross-origin requests
+# In production, consider using Django REST Framework with proper token-based authentication
 
 
 # Template views
@@ -388,18 +395,28 @@ def task_detail_api(request, task_id):
             return JsonResponse({'message': 'Task updated'})
         
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            # Log error for debugging, return generic message
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error updating task {task_id}: {str(e)}")
+            return JsonResponse({'error': 'An error occurred while updating the task'}, status=500)
     
     elif request.method == 'DELETE':
-        # Log activity before deleting
+        # Store task info before deleting
+        task_title = task.title
+        task_id_ref = task.id
+        
+        # Delete the task first
+        task.delete()
+        
+        # Log activity after deleting (without task reference)
         ActivityLog.objects.create(
             user=request.user,
-            task=task,
+            task=None,
             action='delete_task',
-            details='Task deleted'
+            details=f'Task "{task_title}" (ID: {task_id_ref}) deleted'
         )
         
-        task.delete()
         return JsonResponse({'message': 'Task deleted'})
 
 
